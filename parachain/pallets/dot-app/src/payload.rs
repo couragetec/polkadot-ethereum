@@ -3,7 +3,7 @@ use sp_std::prelude::*;
 use codec::Encode;
 
 use ethabi::{self, Token};
-use artemis_ethereum::{H160, U256};
+use artemis_ethereum::H160;
 
 // Message to Ethereum (ABI-encoded)
 #[derive(Copy, Clone, PartialEq, Eq, RuntimeDebug)]
@@ -19,7 +19,7 @@ impl<AccountId: Encode> OutboundPayload<AccountId> {
 		let tokens = vec![
 			Token::FixedBytes(self.sender.encode()),
 			Token::Address(self.recipient),
-			Token::Uint(self.amount)
+			Token::Uint(self.amount.into())
 		];
 		ethabi::encode_function("mint(bytes32,address,uint128)", tokens.as_ref())
 	}

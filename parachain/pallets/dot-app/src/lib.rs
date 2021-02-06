@@ -1,21 +1,4 @@
-//! # ETH
-//!
-//! An application that implements a bridged ETH asset.
-//!
-//! ## Overview
-//!
-//! ETH balances are stored in the tightly-coupled [`asset`] runtime module. When an account holder burns
-//! some of their balance, a `Transfer` event is emitted. An external relayer will listen for this event
-//! and relay it to the other chain.
-//!
-//! ## Interface
-//!
-//! ### Dispatchable Calls
-//!
-//! - `burn`: Burn an ETH balance.
-//!
 #![cfg_attr(not(feature = "std"), no_std)]
-
 use frame_system::{self as system, ensure_signed};
 use frame_support::{
 	decl_error, decl_event, decl_module, decl_storage,
@@ -24,13 +7,16 @@ use frame_support::{
 		Get,
 		EnsureOrigin,
 		Currency,
-		WithdrawReasons,
 		ExistenceRequirement::KeepAlive,
 	}
 };
 use sp_std::prelude::*;
-use sp_core::{H160, U256};
-use sp_runtime::ModuleId;
+use sp_core::H160;
+use sp_runtime::{
+	ModuleId,
+	traits::AccountIdConversion,
+	SaturatedConversion,
+};
 
 use artemis_core::{ChannelId, SubmitOutbound};
 
@@ -40,8 +26,8 @@ use payload::OutboundPayload;
 #[cfg(test)]
 mod mock;
 
-// #[cfg(test)]
-// mod tests;
+#[cfg(test)]
+mod tests;
 
 type BalanceOf<T> = <<T as Config>::Currency as Currency<<T as frame_system::Config>::AccountId>>::Balance;
 
@@ -98,7 +84,7 @@ decl_module! {
 			let message = OutboundPayload {
 				sender: who.clone(),
 				recipient: recipient.clone(),
-				amount: amount
+				amount: amount.saturated_into::<u128>(),
 			};
 
 			T::SubmitOutbound::submit(channel_id, Address::get(), &message.encode())?;

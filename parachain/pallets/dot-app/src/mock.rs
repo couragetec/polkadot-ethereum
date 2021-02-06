@@ -15,8 +15,7 @@ use sp_runtime::{
 };
 use frame_system as system;
 
-use artemis_core::{ChannelId, AssetId, SubmitOutbound};
-use artemis_assets::SingleAssetAdaptor;
+use artemis_core::{ChannelId, SubmitOutbound};
 
 use crate as dot_app;
 
@@ -29,7 +28,7 @@ impl_outer_origin! {
 impl_outer_dispatch! {
 	pub enum Call for Test where origin: Origin {
 			frame_system::System,
-			artemis_assets::Assets,
+			pallet_balances::Balances,
 			artemis_dispatch::Dispatch,
 			dot_app::DOT,
 	}
@@ -38,13 +37,15 @@ impl_outer_dispatch! {
 impl_outer_event! {
 	pub enum Event for Test {
 			system<T>,
-			artemis_assets<T>,
+			pallet_balances<T>,
 			artemis_dispatch<T>,
 			dot_app<T>,
 	}
 }
 
 pub type Signature = MultiSignature;
+
+pub type Balance = u128;
 
 pub type AccountId = <<Signature as Verify>::Signer as IdentifyAccount>::AccountId;
 
@@ -107,7 +108,7 @@ parameter_types! {
 impl pallet_balances::Config for Test {
 	type MaxLocks = MaxLocks;
 	/// The type for recording an account's balance.
-	type Balance = u128;
+	type Balance = Balance;
 	/// The ubiquitous event type.
 	type Event = Event;
 	type DustRemoval = ();
@@ -117,9 +118,8 @@ impl pallet_balances::Config for Test {
 }
 
 
-
 parameter_types! {
-	pub const ModuleId = ModuleId(*b"s/dotapp");
+	pub const DotModuleId: ModuleId = ModuleId(*b"s/dotapp");
 }
 
 impl Config for Test {
@@ -127,12 +127,12 @@ impl Config for Test {
 	type Currency = Balances;
 	type SubmitOutbound = MockSubmitOutbound;
 	type CallOrigin = artemis_dispatch::EnsureEthereumAccount;
-	type ModuleId = ModuleId;
+	type ModuleId = DotModuleId;
 }
 
 pub type System = system::Module<Test>;
 pub type Dispatch = artemis_dispatch::Module<Test>;
-pub type Balances = pallet_balances::Module<T>;
+pub type Balances = pallet_balances::Module<Test>;
 pub type DOT = Module<Test>;
 
 pub fn new_tester() -> sp_io::TestExternalities {

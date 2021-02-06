@@ -7,10 +7,11 @@ use sp_std::convert::TryFrom;
 
 // Used to decode a raw Ethereum log into an [`Envelope`].
 static EVENT_ABI: &Event = &Event {
-	signature: "Message(address,uint64,bytes)",
+	signature: "Message(address,uint64,uint128,bytes)",
 	inputs: &[
 		Param { kind: ParamKind::Address, indexed: false },
 		Param { kind: ParamKind::Uint(64), indexed: false },
+		Param { kind: ParamKind::Uint(128), indexed: false },
 		Param { kind: ParamKind::Bytes, indexed: false },
 	],
 	anonymous: false
@@ -25,6 +26,8 @@ pub struct Envelope {
 	pub source: H160,
 	/// A nonce for enforcing replay protection and ordering.
 	pub nonce: u64,
+	/// The fee paid by the user
+	pub fee: u128,
 	/// The inner payload generated from the source application.
 	pub payload: Vec<u8>,
 }
