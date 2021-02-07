@@ -10,6 +10,7 @@ abstract contract OutboundChannel {
     event Message(
         address source,
         uint64 nonce,
+        bytes metadata,
         bytes payload
     );
 

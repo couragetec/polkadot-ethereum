@@ -117,7 +117,6 @@ impl pallet_balances::Config for Test {
 	type WeightInfo = ();
 }
 
-
 parameter_types! {
 	pub const DotModuleId: ModuleId = ModuleId(*b"s/dotapp");
 }

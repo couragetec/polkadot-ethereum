@@ -3,37 +3,42 @@ use super::*;
 
 use crate::Config;
 use sp_core::H256;
-use frame_support::{impl_outer_origin, impl_outer_event, parameter_types,
+use frame_support::{impl_outer_origin, impl_outer_event, impl_outer_dispatch, parameter_types,
 	weights::Weight,
 	dispatch::DispatchError
 };
 use sp_runtime::{
 	traits::{BlakeTwo256, IdentityLookup, IdentifyAccount, Verify}, testing::Header, Perbill, MultiSignature
 };
+use sp_keyring::AccountKeyring as Keyring;
 use sp_std::convert::From;
 use frame_system as system;
 
-use artemis_core::{MessageCommitment, MessageDispatch, ChannelId, SourceChannel, SourceChannelConfig};
+use artemis_core::{MessageCommitment, MessageDispatch, ChannelId, SourceChannel, SourceChannelConfig, rewards::InstantRewards};
 use artemis_ethereum::Log;
+
+mod bridge {
+	pub use crate::Event;
+	pub use crate::Call;
+}
 
 impl_outer_origin! {
 	pub enum Origin for Test {}
 }
 
-mod test_events {
-    pub use crate::Event;
-}
-
 impl_outer_event! {
     pub enum TestEvent for Test {
 		system<T>,
-        test_events,
+		pallet_balances<T>,
+        bridge,
     }
 }
 
 pub type Signature = MultiSignature;
 
 pub type AccountId = <<Signature as Verify>::Signer as IdentifyAccount>::AccountId;
+
+type Balance = u128;
 
 #[derive(Clone, Eq, PartialEq)]
 pub struct Test;
@@ -63,13 +68,32 @@ impl system::Config for Test {
 	type DbWeight = ();
 	type Version = ();
 	type PalletInfo = ();
-	type AccountData = ();
+	type AccountData = pallet_balances::AccountData<Balance>;
 	type OnNewAccount = ();
 	type OnKilledAccount = ();
 	type SystemWeightInfo = ();
 	type SS58Prefix = ();
 }
-// Mock verifier that gives the green light to all messages
+
+
+parameter_types! {
+	pub const ExistentialDeposit: u128 = 1;
+	pub const MaxLocks: u32 = 50;
+}
+
+impl pallet_balances::Config for Test {
+	/// The ubiquitous event type.
+	type Event = TestEvent;
+	type MaxLocks = MaxLocks;
+	/// The type for recording an account's balance.
+	type Balance = Balance;
+	type DustRemoval = ();
+	type ExistentialDeposit = ExistentialDeposit;
+	type AccountStore = System;
+	type WeightInfo = ();
+}
+
+// Mock verifier
 pub struct MockVerifier;
 
 impl Verifier for MockVerifier {
@@ -79,6 +103,7 @@ impl Verifier for MockVerifier {
 	}
 }
 
+// Mock Commitments
 pub struct MockMessageCommitment;
 
 impl MessageCommitment for MockMessageCommitment {
@@ -87,21 +112,29 @@ impl MessageCommitment for MockMessageCommitment {
 	}
 }
 
+// Mock Dispatch
 pub struct MockMessageDispatch;
 
 impl MessageDispatch<(ChannelId, u64)> for MockMessageDispatch {
 	fn dispatch(source: H160, id: (ChannelId, u64), payload: &[u8]) {}
 }
 
+parameter_types! {
+	pub RewardsAccount: AccountId = Keyring::Eve.into();
+}
 
 impl Config for Test {
 	type Event = TestEvent;
 	type Verifier = MockVerifier;
 	type MessageCommitment = MockMessageCommitment;
 	type MessageDispatch = MockMessageDispatch;
+	type RewardsAccount = RewardsAccount;
+	type InboundMessageFee = Balance;
+	type RewardRelayer = InstantRewards<Self, Balances>;
 }
 
 pub type System = system::Module<Test>;
+pub type Balances = pallet_balances::Module<Test>;
 pub type Bridge = Module<Test>;
 
 

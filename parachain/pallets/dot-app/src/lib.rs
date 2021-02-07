@@ -7,7 +7,7 @@ use frame_support::{
 		Get,
 		EnsureOrigin,
 		Currency,
-		ExistenceRequirement::KeepAlive,
+		ExistenceRequirement::{KeepAlive, AllowDeath},
 	}
 };
 use sp_std::prelude::*;
@@ -79,7 +79,7 @@ decl_module! {
 		pub fn lock(origin, channel_id: ChannelId, recipient: H160, amount: BalanceOf<T>) -> DispatchResult {
 			let who = ensure_signed(origin)?;
 
-			T::Currency::transfer(&who, &Self::account_id(), amount, KeepAlive)?;
+			T::Currency::transfer(&who, &Self::account_id(), amount, AllowDeath)?;
 
 			let message = OutboundPayload {
 				sender: who.clone(),

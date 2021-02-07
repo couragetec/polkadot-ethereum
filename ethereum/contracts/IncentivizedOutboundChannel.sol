@@ -18,7 +18,17 @@ contract IncentivizedOutboundChannel is OutboundChannel {
         public
         override
     {
+        bytes memory metadata;
         emit Message(msg.sender, nonce, payload);
         nonce = nonce + 1;
+    }
+
+
+    function encodeMetadata(uint128 _fee)
+        private
+        pure
+        returns (bytes memory)
+    {
+        return abi.encodePacked(_fee.toBytes32LE());
     }
 }

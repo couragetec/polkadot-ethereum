@@ -71,4 +71,13 @@ library ScaleCodec {
         }
         return out;
     }
+
+    function encode(uint128 value) internal pure returns (bytes16) {
+        bytes32 b = bytes16(value);
+        bytes32 out;
+        for (uint i = 0; i < 16; i++) {
+            out |= bytes32(b[16 - i - 1] & 0xFF) >> (i * 8);
+        }
+        return out;
+    }
 }

@@ -1,10 +1,13 @@
 use frame_support::{dispatch::{DispatchError, DispatchResult}, storage::StorageMap};
 use sp_std::{cell::Cell, marker::PhantomData, boxed::Box};
+use sp_core::RuntimeDebug;
 use artemis_core::{ChannelId, MessageDispatch};
 use crate::{
 	Config, Error, InboundChannels,
 	envelope::Envelope, primitives::{InboundChannel, InboundChannelData}
 };
+
+use codec::{Encode, Decode};
 
 /// Construct an inbound channel object
 pub fn make_inbound_channel<T>(channel_id: ChannelId) -> Box<dyn InboundChannel<T::AccountId>>
@@ -17,7 +20,7 @@ where
 	}
 }
 
-/// Basic Channel
+
 struct BasicInboundChannel<T: Config> {
 	channel_id: ChannelId,
 	storage: Storage<T>
@@ -74,12 +77,22 @@ impl<T: Config> InboundChannel<T::AccountId> for IncentivizedInboundChannel<T> {
 			Ok(())
 		})?;
 
+		//let metadata = Metadata::decode(&mut envelope.metadata.as_ref()).map_err(|_| ())?;
+
+
 		let message_id = (self.channel_id, envelope.nonce);
 		T::MessageDispatch::dispatch(envelope.source, message_id, &envelope.payload);
 
 		Ok(())
 	}
 }
+
+
+#[derive(Encode, Decode, Copy, Clone, PartialEq, Eq, RuntimeDebug)]
+struct Metadata {
+	fee: u128
+}
+
 
 struct Storage<T: Config> {
 	channel_id: ChannelId,
