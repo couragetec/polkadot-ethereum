@@ -1,5 +1,10 @@
-use crate::mock::{new_tester, AccountId, Origin, Event, System, Balances, DOT};
-use frame_support::{assert_ok, traits::Currency};
+use crate::mock::{AccountId, Balances, DOT, Event, Origin, System, new_tester};
+use frame_support::{assert_noop, assert_ok,
+	dispatch::{
+		DispatchError,
+	},
+	traits::Currency
+};
 use sp_keyring::AccountKeyring as Keyring;
 use sp_core::H160;
 use crate::RawEvent;
@@ -64,3 +69,37 @@ fn should_unlock() {
 	});
 }
 
+#[test]
+fn should_unlock_fail_on_bad_origin() {
+	new_tester().execute_with(|| {
+		let unknown_peer_contract = H160::repeat_byte(64);
+		let sender = H160::repeat_byte(7);
+		let recipient: AccountId = Keyring::Bob.into();
+		let amount = 100;
+		let balance = 500;
+
+		let _ = Balances::deposit_creating(&DOT::account_id(), balance);
+
+		assert_noop!(
+			DOT::unlock(
+				artemis_dispatch::Origin(unknown_peer_contract).into(),
+				sender,
+				recipient.clone(),
+				amount
+			),
+			DispatchError::BadOrigin
+		);
+
+		assert_noop!(
+			DOT::unlock(
+				Origin::signed(Keyring::Alice.into()),
+				sender,
+				recipient.clone(),
+				amount
+			),
+			DispatchError::BadOrigin
+		);
+
+		assert_eq!(Balances::total_balance(&DOT::account_id()), balance);
+	});
+}
